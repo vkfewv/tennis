@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -233,6 +234,32 @@
   .mtx th.rh { text-align: right; padding-right: 7px; }
 
   .hidden { display: none !important; }
+
+  /* ---------- 대진표 직접 수정 ---------- */
+  .bracket td.slot { cursor: pointer; }
+  .bracket td.slot:hover { background: #F0F4EE; }
+  .bracket td.sel {
+    background: #E3EFE6;
+    box-shadow: inset 0 0 0 2px var(--court);
+  }
+  .wchip {
+    display: inline-block; padding: 1px 4px; margin: 0 1px; border-radius: 2px;
+    cursor: pointer; font-weight: 600;
+  }
+  .wchip:hover { background: #F0F4EE; }
+  .wchip.sel { box-shadow: inset 0 0 0 2px var(--court); background: #E3EFE6; }
+  .wchip.gone { opacity: 0.38; text-decoration: line-through; }
+  .edit-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 10px; padding: 9px 11px; border-radius: 2px;
+    background: var(--paper); border: 1px solid var(--line);
+  }
+  .edit-hint { font-size: 12.5px; color: var(--ink-2); margin-right: auto; }
+  .edit-hint b { color: var(--court); }
+  .edited-tag {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+    background: var(--court); color: var(--court-ink); padding: 2px 6px; border-radius: 2px;
+  }
 
   #boot {
     margin-bottom: 20px; padding: 12px 14px; border-radius: 3px;
@@ -1063,37 +1090,59 @@ window.addEventListener('error', function (e) {
     return AVOID.indexOf(stat.pattern) !== -1 || mid;
   }
 
+  /* ---------- 편집 상태 ---------- */
+  var view = null;   // { players, rounds, original, mode, guarantee, cm, undo:[], sel:null, edited:false }
+
+  function cloneRounds(rs) {
+    return rs.map(function (r) {
+      return { courts: r.courts.map(function (c) { return c.slice(); }), wait: r.wait.slice() };
+    });
+  }
+
+  function readSlot(r, s) {
+    return s.k === 'c' ? r.courts[s.i][s.j] : r.wait[s.i];
+  }
+  function writeSlot(r, s, v) {
+    if (s.k === 'c') r.courts[s.i][s.j] = v; else r.wait[s.i] = v;
+  }
+  function parseSlot(str) {
+    var a = str.split(':');
+    return { t: +a[0], k: a[1], i: +a[2], j: a[3] === undefined ? 0 : +a[3] };
+  }
+  function slotKey(s) { return s.t + ':' + s.k + ':' + s.i + ':' + s.j; }
+
+  function pushUndo() {
+    view.undo.push(cloneRounds(view.rounds));
+    if (view.undo.length > 60) view.undo.shift();
+  }
+
+  function applySwap(a, b) {
+    var r = view.rounds[a.t];
+    var va = readSlot(r, a), vb = readSlot(r, b);
+    if (va === vb) return false;
+    pushUndo();
+    writeSlot(r, a, vb);
+    writeSlot(r, b, va);
+    r.wait.sort(function (x, y) { return x - y; });
+    view.edited = true;
+    return true;
+  }
+
+  /* ---------- 결과 화면 ---------- */
   function render() {
-    var players = result.players, best = result.best, m = result.mode;
-    var n = players.length;
-    var cm = E.colorMap(players.map(function (p) { return p.name; }));
-    var S = E.summarize(best.rounds, players);
-    var is3 = m !== '2court';
-    var nm = function (i) {
-      return '<span class="pname" style="color:' + cm[players[i].name] + '">' +
-             esc(players[i].name) + '</span>';
+    view = {
+      players: result.players,
+      mode: result.mode,
+      guarantee: result.guarantee,
+      rounds: cloneRounds(result.best.rounds),
+      original: cloneRounds(result.best.rounds),
+      cm: E.colorMap(result.players.map(function (p) { return p.name; })),
+      undo: [],
+      sel: null,
+      edited: false
     };
 
-    /* --- 품질 요약 --- */
-    var dupP = 0, dupO = 0;
-    for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) {
-      if (S.partner[i][j] >= 2) dupP++;
-      if (S.opponent[i][j] >= 3) dupO++;
-    }
-    var avoidN = 0, under = [];
-    players.forEach(function (p, i) {
-      if (isAvoid(S.stat[i])) avoidN++;
-      if (!p.guest && !p.late && !p.early && S.stat[i].play < result.guarantee) under.push(p.name);
-    });
-    var q = [];
-    q.push('<span class="q">' + E.modeInfo(m).label + '</span>');
-    q.push('<span class="q' + (under.length ? ' bad' : '') + '">목표 ' + result.guarantee +
-           '경기 미달 <b>' + under.length + '명</b>' + (under.length ? ' (' + under.join(', ') + ')' : '') + '</span>');
-    q.push('<span class="q' + (dupP ? ' bad' : '') + '">같은 파트너 2회 <b>' + dupP + '쌍</b></span>');
-    q.push('<span class="q' + (dupO ? ' bad' : '') + '">같은 상대 3회 <b>' + dupO + '쌍</b></span>');
-    q.push('<span class="q' + (avoidN ? ' bad' : '') + '">기피 흐름 <b>' + avoidN + '명</b></span>');
-
-    /* --- 대진표 --- */
+    var is3 = view.mode !== '2court';
     var courtCols = is3 ? 3 : 2;
     var head1 = '<tr><th rowspan="2">시간</th>';
     var head2 = '<tr>';
@@ -1103,46 +1152,200 @@ window.addEventListener('error', function (e) {
     }
     head1 += '<th rowspan="2">대기</th></tr>';
     head2 += '</tr>';
+    view.head = head1 + head2;
 
+    $('output').innerHTML =
+      '<section><div class="sec-head"><h2>대진표</h2>' +
+        '<span class="sec-note">결과 칸은 비워 뒀습니다</span>' +
+        '<span id="editedTag" class="edited-tag hidden">직접 수정됨</span></div>' +
+        '<div class="edit-bar no-print">' +
+          '<span class="edit-hint" id="editHint"></span>' +
+          '<button id="undoBtn" disabled>되돌리기</button>' +
+          '<button id="resetBtn" disabled>생성 결과로</button>' +
+          '<button id="printBtn">인쇄 · PDF 저장</button>' +
+        '</div>' +
+        '<div id="quality" class="quality"></div>' +
+        '<div class="scroll" id="bracketWrap"></div></section>' +
+
+      '<section><div class="sec-head"><h2>참여 통계</h2>' +
+        '<span class="sec-note">채운 칸이 출전, 빈 칸이 대기</span></div>' +
+        '<div class="scroll" id="statsWrap"></div></section>' +
+
+      '<section><div class="sec-head"><h2>파트너 매칭</h2>' +
+        '<span class="sec-note">같은 팀으로 만난 횟수 · 2회 이상 표시</span></div>' +
+        '<div id="partnerWrap"></div></section>' +
+
+      '<section><div class="sec-head"><h2>상대 매칭</h2>' +
+        '<span class="sec-note">네트 반대편에서 만난 횟수 · 2회 이상 표시</span></div>' +
+        '<div id="opponentWrap"></div></section>';
+
+    $('printBtn').addEventListener('click', function () { window.print(); });
+    $('undoBtn').addEventListener('click', function () {
+      if (!view.undo.length) return;
+      view.rounds = view.undo.pop();
+      view.sel = null;
+      view.edited = !sameAsOriginal();
+      refresh();
+    });
+    $('resetBtn').addEventListener('click', function () {
+      pushUndo();
+      view.rounds = cloneRounds(view.original);
+      view.sel = null;
+      view.edited = false;
+      refresh();
+    });
+    $('bracketWrap').addEventListener('click', onSlotClick);
+
+    refresh();
+  }
+
+  function sameAsOriginal() {
+    return JSON.stringify(view.rounds) === JSON.stringify(view.original);
+  }
+
+  function onSlotClick(e) {
+    var el = e.target, raw = null;
+    while (el && el !== $('bracketWrap')) {
+      if (el.getAttribute && el.getAttribute('data-slot')) { raw = el.getAttribute('data-slot'); break; }
+      el = el.parentNode;
+    }
+    if (!raw) return;
+    var s = parseSlot(raw);
+
+    if (!view.sel) { view.sel = s; paintSelection(); return; }
+    if (slotKey(view.sel) === raw) { view.sel = null; paintSelection(); return; }
+
+    if (view.sel.t !== s.t) {
+      view.sel = s;
+      paintSelection('같은 시간대 안에서만 바꿀 수 있습니다. 새로 선택했습니다.');
+      return;
+    }
+    applySwap(view.sel, s);
+    view.sel = null;
+    refresh();
+  }
+
+  /* 선택 표시는 표를 다시 그리지 않고 클래스만 바꾼다 (클릭 대상이 교체되지 않도록) */
+  function paintSelection(msg) {
+    var key = view.sel ? slotKey(view.sel) : '';
+    var els = $('bracketWrap').querySelectorAll('[data-slot]');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].getAttribute('data-slot') === key) els[i].className += ' sel';
+      else els[i].className = els[i].className.replace(/\s*\bsel\b/g, '');
+    }
+    setHint(msg);
+  }
+
+  function setHint(msg) {
+    $('editHint').innerHTML = msg ? esc(msg)
+      : (view.sel
+          ? '바꿀 상대를 <b>같은 시간대</b>에서 고르세요. 다시 누르면 선택 해제'
+          : '이름을 눌러 <b>두 자리를 서로 교환</b>할 수 있습니다. 통계는 즉시 갱신됩니다');
+  }
+
+  function refresh(msg) {
+    var wrap = $('bracketWrap');
+    var sx = wrap ? wrap.scrollLeft : 0;
+    renderBracket();
+    if (wrap) wrap.scrollLeft = sx;
+    renderQuality();
+    renderStats();
+    renderMatrices();
+
+    $('undoBtn').disabled = view.undo.length === 0;
+    $('resetBtn').disabled = !view.edited;
+    $('editedTag').className = 'edited-tag' + (view.edited ? '' : ' hidden');
+    setHint(msg);
+  }
+
+  function renderBracket() {
+    var players = view.players, cm = view.cm, m = view.mode;
+    var is3 = m !== '2court';
+    var courtCols = is3 ? 3 : 2;
+    var selKey = view.sel ? slotKey(view.sel) : '';
     var body = '';
-    best.rounds.forEach(function (r, t) {
+
+    view.rounds.forEach(function (r, t) {
       body += '<tr><td class="t-time">' + E.TIMES[t] + '</td>';
       for (var c = 0; c < courtCols; c++) {
         if (r.courts[c]) {
-          body += r.courts[c].map(function (p) { return '<td>' + nm(p) + '</td>'; }).join('');
+          for (var j = 0; j < 4; j++) {
+            var key = t + ':c:' + c + ':' + j;
+            var pi = r.courts[c][j];
+            var bad = !E.availableAt(players[pi], t);
+            body += '<td class="slot' + (key === selKey ? ' sel' : '') + '" data-slot="' + key + '">' +
+              '<span class="pname' + (bad ? ' flagged' : '') + '" style="color:' + cm[players[pi].name] + '"' +
+              (bad ? ' title="지각·조퇴 시간과 겹칩니다"' : '') + '>' +
+              esc(players[pi].name) + (bad ? '<span class="flag"> !</span>' : '') + '</span></td>';
+          }
           body += '<td class="result-cell"></td>';
         } else {
           var reason = E.courtsAt(m, t) > c ? '인원 부족' : '미운영';
           body += '<td colspan="4" class="dead">— ' + reason + ' —</td><td class="dead">—</td>';
         }
       }
-      var w = r.wait.map(function (i) {
-        var p = players[i];
-        var out = !E.availableAt(p, t);
-        return '<span class="' + (out ? 'gone' : '') + '" style="color:' + cm[p.name] +
-               ';font-weight:600"' + (out ? ' title="지각·조퇴로 코트에 없는 시간"' : '') +
-               '>' + esc(p.name) + '</span>';
-      }).join(', ');
+      var w = r.wait.map(function (pi, wi) {
+        var key = t + ':w:' + wi + ':0';
+        var out = !E.availableAt(players[pi], t);
+        return '<span class="wchip' + (out ? ' gone' : '') + (key === selKey ? ' sel' : '') +
+          '" data-slot="' + key + '" style="color:' + cm[players[pi].name] + '"' +
+          (out ? ' title="지각·조퇴로 코트에 없는 시간"' : '') + '>' + esc(players[pi].name) + '</span>';
+      }).join(' ');
       body += '<td class="wait-cell">' + (w || '—') + '</td></tr>';
     });
 
-    /* --- 참여 통계 --- */
-    var statHead = '<tr><th>회원</th><th>경기</th><th>전위</th><th>후위</th><th>대기</th>' +
-                   '<th style="min-width:150px">출전 흐름 (20시→23시)</th></tr>';
-    var stats = '';
+    $('bracketWrap').innerHTML =
+      '<table class="bracket"><thead>' + view.head + '</thead><tbody>' + body + '</tbody></table>';
+  }
+
+  function renderQuality() {
+    var players = view.players, n = players.length;
+    var S = E.summarize(view.rounds, players);
+    view.S = S;
+
+    var dupP = 0, dupO = 0;
+    for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) {
+      if (S.partner[i][j] >= 2) dupP++;
+      if (S.opponent[i][j] >= 3) dupO++;
+    }
+    var avoidN = 0, under = [], timeBad = 0;
     players.forEach(function (p, i) {
+      if (isAvoid(S.stat[i])) avoidN++;
+      if (!p.guest && !p.late && !p.early && S.stat[i].play < view.guarantee) under.push(p.name);
+      for (var t = 0; t < 6; t++) if (S.stat[i].grid[t] && !E.availableAt(p, t)) timeBad++;
+    });
+
+    var q = ['<span class="q">' + E.modeInfo(view.mode).label + '</span>'];
+    if (timeBad) q.push('<span class="q bad">지각·조퇴 시간 위반 <b>' + timeBad + '건</b></span>');
+    q.push('<span class="q' + (under.length ? ' bad' : '') + '">목표 ' + view.guarantee +
+           '경기 미달 <b>' + under.length + '명</b>' + (under.length ? ' (' + under.join(', ') + ')' : '') + '</span>');
+    q.push('<span class="q' + (dupP ? ' bad' : '') + '">같은 파트너 2회 <b>' + dupP + '쌍</b></span>');
+    q.push('<span class="q' + (dupO ? ' bad' : '') + '">같은 상대 3회 <b>' + dupO + '쌍</b></span>');
+    q.push('<span class="q' + (avoidN ? ' bad' : '') + '">기피 흐름 <b>' + avoidN + '명</b></span>');
+    $('quality').innerHTML = q.join('');
+  }
+
+  function renderStats() {
+    var players = view.players, cm = view.cm, S = view.S;
+    var head = '<tr><th>회원</th><th>경기</th><th>전위</th><th>후위</th><th>대기</th>' +
+               '<th style="min-width:150px">출전 흐름 (20시→23시)</th></tr>';
+    var body = players.map(function (p, i) {
       var s = S.stat[i];
       var tag = p.guest ? ' <span class="flag">G</span>' :
         ((p.late ? ' <span class="flag">지' + p.late + '</span>' : '') +
          (p.early ? ' <span class="flag">조' + p.early + '</span>' : ''));
-      stats += '<tr><td style="text-align:left;padding-left:8px">' + nm(i) + tag + '</td>' +
-        '<td class="pat-code" style="font-size:13px;color:var(--ink)">' + s.play + '</td>' +
+      return '<tr><td style="text-align:left;padding-left:8px">' +
+        '<span class="pname" style="color:' + cm[p.name] + '">' + esc(p.name) + '</span>' + tag + '</td>' +
+        '<td style="font-family:var(--mono);font-size:13px">' + s.play + '</td>' +
         '<td>' + s.front + '</td><td>' + s.back + '</td><td>' + s.wait + '</td>' +
         '<td style="text-align:left;padding-left:8px">' + stripHTML(s.grid, cm[p.name]) +
         '<span class="pat-code">' + s.pattern + (isAvoid(s) ? ' ⚑' : '') + '</span></td></tr>';
-    });
+    }).join('');
+    $('statsWrap').innerHTML = '<table><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+  }
 
-    /* --- 행렬 --- */
+  function renderMatrices() {
+    var players = view.players, cm = view.cm, S = view.S;
     function matrix(data, kind) {
       var h = '<tr><th class="rh">이름</th>' + players.map(function (p) {
         return '<th style="color:' + cm[p.name] + '">' + esc(p.name) + '</th>';
@@ -1158,29 +1361,8 @@ window.addEventListener('error', function (e) {
       }).join('');
       return '<div class="scroll"><table class="mtx"><thead>' + h + '</thead><tbody>' + b + '</tbody></table></div>';
     }
-
-    $('output').innerHTML =
-      '<section><div class="sec-head"><h2>대진표</h2>' +
-        '<span class="sec-note">결과 칸은 비워 뒀습니다</span>' +
-        '<button class="no-print" id="printBtn" style="margin-left:auto">인쇄 · PDF 저장</button></div>' +
-        '<div class="quality">' + q.join('') + '</div>' +
-        '<div class="scroll"><table class="bracket"><thead>' + head1 + head2 +
-        '</thead><tbody>' + body + '</tbody></table></div></section>' +
-
-      '<section><div class="sec-head"><h2>참여 통계</h2>' +
-        '<span class="sec-note">채운 칸이 출전, 빈 칸이 대기</span></div>' +
-        '<div class="scroll"><table><thead>' + statHead + '</thead><tbody>' +
-        stats + '</tbody></table></div></section>' +
-
-      '<section><div class="sec-head"><h2>파트너 매칭</h2>' +
-        '<span class="sec-note">같은 팀으로 만난 횟수 · 2회 이상 표시</span></div>' +
-        matrix(S.partner, 'p') + '</section>' +
-
-      '<section><div class="sec-head"><h2>상대 매칭</h2>' +
-        '<span class="sec-note">네트 반대편에서 만난 횟수 · 2회 이상 표시</span></div>' +
-        matrix(S.opponent, 'o') + '</section>';
-
-    $('printBtn').addEventListener('click', function () { window.print(); });
+    $('partnerWrap').innerHTML = matrix(S.partner, 'p');
+    $('opponentWrap').innerHTML = matrix(S.opponent, 'o');
   }
 
   try {
