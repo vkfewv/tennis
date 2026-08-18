@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>화요 야간 테니스 대진표</title>
+<style>
+  :root {
+    --ink: #17211F;
+    --ink-2: #5A6864;
+    --ink-3: #8A9691;
+    --shell: #E3E7E1;
+    --paper: #FCFBF8;
+    --line: #CBD1C9;
+    --line-soft: #E2E6DE;
+    --court: #2C5F4A;
+    --court-hi: #3C7A5F;
+    --court-ink: #F2F6F1;
+    --warn: #9C4A18;
+    --warn-bg: #FBF0E7;
+    --dup-a: #FBEAE7;
+    --dup-b: #FAF3DC;
+    --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard",
+            "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 28px 20px 80px;
+    background: var(--shell);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; }
+
+  /* ---------- 헤더 ---------- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  h1 {
+    margin: 6px 0 0;
+    font-size: clamp(26px, 5vw, 38px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+  .baseline {
+    margin: 14px 0 30px;
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--line);
+    height: 5px;
+  }
+
+  /* ---------- 섹션 ---------- */
+  section { margin-bottom: 30px; }
+  .sec-head {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 10px; flex-wrap: wrap;
+  }
+  .sec-head h2 {
+    margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .sec-note { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 14px;
+  }
+
+  /* ---------- 명단 ---------- */
+  .roster { display: grid; gap: 4px; }
+  .r-head, .r-row {
+    display: grid;
+    grid-template-columns: 1fr 58px 58px 52px 56px 28px;
+    gap: 6px;
+    align-items: center;
+  }
+  .r-head {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em;
+    color: var(--ink-3); padding: 0 4px 6px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .r-head span { text-align: center; }
+  .r-head span:first-child { text-align: left; }
+  .r-row { padding: 3px 4px; border-radius: 2px; }
+  .r-row.off { opacity: 0.42; }
+  .r-name { display: flex; align-items: center; gap: 7px; min-width: 0; }
+  .chip {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--ink-3); flex: none;
+  }
+  .r-name b { font-weight: 600; letter-spacing: -0.01em; }
+  .r-row input[type=number] {
+    width: 100%; text-align: center; font-family: var(--mono); font-size: 13px;
+    padding: 4px 0; border: 1px solid var(--line); border-radius: 2px;
+    background: #fff; color: var(--ink);
+    -moz-appearance: textfield;
+  }
+  .r-row input[type=number]::-webkit-outer-spin-button,
+  .r-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .cbox { display: flex; justify-content: center; }
+  input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--court); margin: 0; }
+  .del {
+    border: none; background: none; color: var(--ink-3); cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 2px 4px; border-radius: 2px;
+  }
+  .del:hover { color: var(--warn); background: var(--warn-bg); }
+  .r-row .spacer { visibility: hidden; }
+
+  .add-row { display: flex; gap: 6px; margin-top: 12px; }
+  .add-row input[type=text] {
+    flex: 1; min-width: 0; padding: 7px 9px; font-size: 14px; font-family: var(--font);
+    border: 1px solid var(--line); border-radius: 2px; background: #fff; color: var(--ink);
+  }
+  .count-line {
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line-soft);
+    font-family: var(--mono); font-size: 12px; color: var(--ink-2);
+  }
+  .count-line b { color: var(--ink); font-size: 14px; }
+
+  /* ---------- 버튼 ---------- */
+  button {
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    padding: 7px 13px; border-radius: 2px; cursor: pointer;
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+  }
+  button:hover:not(:disabled) { border-color: var(--ink-2); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button.primary {
+    background: var(--court); border-color: var(--court); color: var(--court-ink);
+    font-size: 15px; padding: 11px 26px; letter-spacing: -0.01em;
+  }
+  button.primary:hover:not(:disabled) { background: var(--court-hi); border-color: var(--court-hi); }
+  :focus-visible { outline: 2px solid var(--court); outline-offset: 2px; }
+
+  /* ---------- 모드 ---------- */
+  .modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr)); gap: 8px; }
+  .mode {
+    text-align: left; padding: 11px 12px; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 3px; cursor: pointer;
+    display: block; width: 100%;
+  }
+  .mode.on { border-color: var(--court); box-shadow: inset 0 0 0 1px var(--court); }
+  .mode .m-top { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+  .mode .m-name { font-weight: 700; font-size: 13.5px; }
+  .mode .m-dist { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); }
+  .mode .m-slots { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+  .mode:disabled { opacity: 0.4; }
+  .badge {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em;
+    padding: 2px 5px; border-radius: 2px; white-space: nowrap;
+  }
+  .badge.rec { background: var(--court); color: var(--court-ink); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); }
+
+  .run-bar { display: flex; align-items: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+  .seed { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .seed input {
+    width: 92px; padding: 6px 8px; font-family: var(--mono); font-size: 12px;
+    border: 1px solid var(--line); border-radius: 2px; background: #fff; color: var(--ink);
+  }
+  .progress { flex: 1; min-width: 160px; }
+  .track { height: 4px; background: var(--line-soft); border-radius: 2px; overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--court); transition: width 0.12s linear; }
+  .p-label { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-top: 5px; }
+  .notice {
+    margin-top: 12px; padding: 9px 11px; border-radius: 2px;
+    background: var(--warn-bg); color: var(--warn); font-size: 12.5px;
+    border-left: 3px solid var(--warn);
+  }
+
+  /* ---------- 표 공통 ---------- */
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; background: var(--paper); font-size: 13px; }
+  th, td {
+    border: 1px solid var(--line); padding: 5px 4px; text-align: center;
+    white-space: nowrap;
+  }
+  thead th {
+    background: #EFF2ED; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.02em; color: var(--ink-2);
+  }
+  .t-time {
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+    background: #F5F7F3; letter-spacing: -0.02em;
+  }
+  .pname { font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em; }
+  .teamA-h { color: #1B4F8A; }
+  .teamB-h { color: #A03024; }
+  .result-cell { background: repeating-linear-gradient(#fff 0 15px, #F0EFE8 15px 16px); min-width: 56px; }
+  .dead { color: var(--ink-3); background: #F2F4F0; font-size: 11.5px; letter-spacing: 0.02em; }
+  .wait-cell { font-size: 12px; white-space: normal; min-width: 130px; text-align: left; padding: 5px 7px; line-height: 1.7; }
+  .wait-cell .gone { opacity: 0.38; text-decoration: line-through; }
+  .bracket th, .bracket td { padding: 6px 4px; }
+  .bracket .court-h { background: #E7ECE5; }
+
+  /* ---------- 패턴 스트립 (시그니처) ---------- */
+  .strip { display: inline-flex; gap: 2px; vertical-align: middle; }
+  .strip i {
+    width: 11px; height: 15px; border-radius: 1px; display: block;
+    border: 1px solid currentColor;
+  }
+  .strip i.on { background: currentColor; }
+  .strip i.off { background: transparent; opacity: 0.3; }
+  .pat-code { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin-left: 8px; }
+  .flag { font-family: var(--mono); font-size: 10px; color: var(--warn); }
+
+  /* ---------- 품질 요약 ---------- */
+  .quality { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .q {
+    font-family: var(--mono); font-size: 11px; padding: 4px 8px; border-radius: 2px;
+    background: var(--paper); border: 1px solid var(--line); color: var(--ink-2);
+  }
+  .q.bad { background: var(--warn-bg); border-color: #E8D3C2; color: var(--warn); }
+  .q b { color: var(--ink); }
+
+  .mtx td.self { background: #F2F4F0; color: var(--ink-3); }
+  .mtx td.zero { color: #C4CBC2; }
+  .mtx td.hi-p { background: var(--dup-a); font-weight: 700; }
+  .mtx td.hi-o { background: var(--dup-b); font-weight: 700; }
+  .mtx th.rh { text-align: right; padding-right: 7px; }
+
+  .hidden { display: none !important; }
+
+  #boot {
+    margin-bottom: 20px; padding: 12px 14px; border-radius: 3px;
+    background: var(--warn-bg); border-left: 3px solid var(--warn);
+    color: var(--warn); font-size: 13px; line-height: 1.65;
+  }
+  #boot b { display: block; margin-bottom: 3px; font-size: 13.5px; }
+  #boot code {
+    font-family: var(--mono); font-size: 11.5px; background: #fff;
+    padding: 1px 4px; border-radius: 2px; word-break: break-all;
+  }
+
+  /* ---------- 인쇄 ---------- */
+  @media print {
+    @page { size: A4 landscape; margin: 10mm; }
+    body { background: #fff; padding: 0; font-size: 11px; }
+    .no-print { display: none !important; }
+    .card, table { border-color: #444; }
+    th, td { border-color: #666; padding: 4px 3px; }
+    thead th { background: #eee !important; }
+    .result-cell { background: #fff; }
+    h1 { font-size: 20px; }
+    .baseline { margin: 8px 0 14px; }
+    section { margin-bottom: 14px; page-break-inside: avoid; }
+    .scroll { overflow: visible; }
+  }
+
+  @media (max-width: 600px) {
+    body { padding: 20px 12px 60px; }
+    .r-head, .r-row { grid-template-columns: 1fr 48px 48px 44px 48px 24px; gap: 4px; }
+    .r-name b { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">화요 야간 · 20:00–23:00 · 30분 6게임</div>
+    <h1>테니스 대진표</h1>
+    <div class="baseline"></div>
+  </header>
+
+  <div id="boot">
+    <b>화면을 준비하는 중입니다.</b>
+    이 문장이 그대로 남아 있으면 스크립트가 실행되지 않은 상태입니다.
+    파일을 기기에 저장한 뒤, 미리보기가 아니라 브라우저에서 직접 열어주세요.
+  </div>
+
+  <section class="no-print">
+    <div class="sec-head">
+      <h2>참석 명단</h2>
+      <span class="sec-note">지각·조퇴는 빠지는 게임 수</span>
+    </div>
+    <div class="card">
+      <div class="roster" id="roster"></div>
+      <div class="add-row">
+        <input type="text" id="newName" placeholder="게스트 이름" maxlength="10" autocomplete="off">
+        <button id="addBtn">추가</button>
+      </div>
+      <div class="count-line" id="countLine"></div>
+    </div>
+  </section>
+
+  <section class="no-print">
+    <div class="sec-head">
+      <h2>코트 운영 방식</h2>
+      <span class="sec-note">참석 인원에 맞춘 예상 경기수</span>
+    </div>
+    <div class="modes" id="modes"></div>
+    <div class="run-bar">
+      <button class="primary" id="runBtn">대진표 만들기</button>
+      <button id="cancelBtn" class="hidden">중지</button>
+      <div class="progress">
+        <div class="track"><div class="fill" id="fill"></div></div>
+        <div class="p-label" id="pLabel">대기 중</div>
+      </div>
+      <label class="seed">시드
+        <input type="text" id="seed" placeholder="자동" maxlength="9" inputmode="numeric">
+      </label>
+    </div>
+    <div id="notice"></div>
+  </section>
+
+  <div id="output"></div>
+
+</div>
+
+<script>
+window.__bootFail = function (msg) {
+  var el = document.getElementById('boot');
+  if (!el) return;
+  el.innerHTML = '<b>화면을 그리지 못했습니다.</b>아래 내용을 그대로 알려주시면 원인을 찾을 수 있습니다.<br><code>' +
+    String(msg).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }) +
+    '</code>';
+};
+window.addEventListener('error', function (e) {
+  window.__bootFail((e.message || '알 수 없는 오류') + ' @ ' + (e.lineno || '?'));
+});
+</script>
+
+<script>
+/* =============================================================
+   테니스 대진 생성 엔진
+   Google Apps Script 원본 규칙을 그대로 이식 (가중치 동일)
+   - 문자열 키 객체맵 -> 인덱스 기반 배열
+   - 전위/후위 최적화는 최종 결과에만 1회 적용
+   ============================================================= */
+(function (global) {
+  'use strict';
+
+  var TIMES = ['20:00~20:30', '20:30~21:00', '21:00~21:30', '21:30~22:00', '22:00~22:30', '22:30~23:00'];
+  var MAX_RETRY = 15000;
+  var PLAYER_COLORS = ['#D32F2F', '#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#0097A7',
+                       '#5D4037', '#C2185B', '#455A64', '#AFB42B', '#6A1B9A', '#00897B'];
+
+  var MODES = [
+    { id: '2court',   label: '기본 2코트',        min: 8,  max: 16 },
+    { id: 'mid3',     label: '중반 3코트 확장',    min: 12, max: 16 },
+    { id: 'late3',    label: '후반 3코트 확장',    min: 12, max: 16 },
+    { id: 'midLate3', label: '중·후반 3코트 확장', min: 12, max: 16 }
+  ];
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  /** 라운드 t에 운영하려는 코트 수 (원본 조건 동일) */
+  function courtsAt(mode, t) {
+    var c = 2;
+    if (mode === 'late3' && t >= 4) c = 3;
+    if (mode === 'mid3' && t >= 2 && t < 4) c = 3;
+    if (mode === 'midLate3' && t >= 2) c = 3;
+    return c;
+  }
+
+  function spotsFor(mode) {
+    if (mode === '2court') return 48;
+    if (mode === 'midLate3') return 64;
+    return 56;
+  }
+
+  function modeInfo(id) {
+    for (var i = 0; i < MODES.length; i++) if (MODES[i].id === id) return MODES[i];
+    return null;
+  }
+
+  /** 인원수 기준 예상 경기수 분포 (사전 검증용) */
+  function planFor(mode, count) {
+    var info = modeInfo(mode);
+    var spots = spotsFor(mode);
+    var out = {
+      mode: mode, label: info.label, spots: spots, count: count,
+      min: info.min, max: info.max,
+      inRange: count >= info.min && count <= info.max,
+      base: 0, rem: 0, full4: false
+    };
+    if (count > 0) {
+      out.base = Math.floor(spots / count);
+      out.rem = spots % count;
+      out.full4 = out.base >= 4;
+    }
+    return out;
+  }
+
+  function colorMap(names) {
+    var sorted = names.slice().sort(function (a, b) { return a.localeCompare(b, 'ko'); });
+    var map = {};
+    sorted.forEach(function (n, i) { map[n] = PLAYER_COLORS[i % PLAYER_COLORS.length]; });
+    return map;
+  }
+
+  /* -----------------------------------------------------------
+     탐색 실행체: doAttempt() 를 원하는 만큼 나눠 호출 가능
+     players: [{name, late, early, guest}]
+     ----------------------------------------------------------- */
+  function makeRun(players, mode, seed) {
+    var n = players.length;
+    var late = [], early = [], guest = [];
+    for (var i = 0; i < n; i++) {
+      late.push(players[i].late | 0);
+      early.push(players[i].early | 0);
+      guest.push(!!players[i].guest);
+    }
+
+    var expectedSpots = spotsFor(mode);
+    var per = Math.floor(expectedSpots / n);
+    var minGuarantee = Math.min(4, per);          // 인원상 4경기가 불가능하면 목표를 자동 하향
+    var avgExpected = Math.max(minGuarantee, per);
+    var rng = mulberry32(seed >>> 0);
+
+    var guestTarget = new Array(n).fill(0);
+    var guestPatterns = new Array(n).fill(null);
+    var elTarget = new Array(n).fill(0);
+    var isRegular = new Array(n).fill(false);
+
+    for (i = 0; i < n; i++) {
+      var maxPos = 6 - late[i] - early[i];
+      if (guest[i]) {
+        guestTarget[i] = Math.min(4, maxPos);
+        var allowed = [];
+        if (late[i] <= 1 && early[i] === 0) allowed.push('011011');
+        if (late[i] === 0 && early[i] <= 1) allowed.push('110110');
+        guestPatterns[i] = allowed;
+      } else if (late[i] > 0 || early[i] > 0) {
+        elTarget[i] = Math.min(maxPos, avgExpected);
+      } else {
+        isRegular[i] = true;
+      }
+    }
+
+    var pc = new Int16Array(n * n);   // 파트너 누적
+    var oc = new Int16Array(n * n);   // 상대 누적
+    var played = new Int16Array(n);
+    var streak = new Int16Array(n);
+    var inRound = new Uint8Array(n);
+    var grid = new Uint8Array(n * 6);  // 라운드별 출전 여부
+
+    var allIdx = [];
+    for (i = 0; i < n; i++) allIdx.push(i);
+
+    var state = {
+      attempts: 0,
+      minScore: Infinity,
+      best: null,
+      done: false,
+      mode: mode,
+      seed: seed >>> 0,
+      n: n,
+      players: players,
+      expectedSpots: expectedSpots,
+      minGuarantee: minGuarantee,
+      avgExpected: avgExpected
+    };
+
+    function shuffleInto(arr) {
+      for (var k = arr.length - 1; k > 0; k--) {
+        var j = (rng() * (k + 1)) | 0;
+        var tv = arr[k]; arr[k] = arr[j]; arr[j] = tv;
+      }
+    }
+
+    function makeCmp(t, explore) {
+      return function (a, b) {
+        if (explore && rng() < 0.15) return rng() - 0.5;
+        var remainA = (6 - early[a]) - t;
+        var remainB = (6 - early[b]) - t;
+        var needA = (guest[a] ? guestTarget[a] : (elTarget[a] || avgExpected)) - played[a];
+        var needB = (guest[b] ? guestTarget[b] : (elTarget[b] || avgExpected)) - played[b];
+        var urgA = (needA > 0 && remainA <= needA) ? 1 : 0;
+        var urgB = (needB > 0 && remainB <= needB) ? 1 : 0;
+        if (urgA !== urgB) return urgB - urgA;
+        if (played[a] !== played[b]) return played[a] - played[b];
+        var restedA = (streak[a] === 0 && played[a] > 0) ? 1 : 0;
+        var restedB = (streak[b] === 0 && played[b] > 0) ? 1 : 0;
+        if (restedA !== restedB) return restedB - restedA;
+        var sA = (streak[a] === 1) ? -1 : (streak[a] >= 2 ? 1 : 0);
+        var sB = (streak[b] === 1) ? -1 : (streak[b] >= 2 ? 1 : 0);
+        if (sA !== sB) return sA - sB;
+        return 0;
+      };
+    }
+
+    function scoreOf(rounds) {
+      var i, j, t, c;
+      var actual = 0;
+      for (i = 0; i < rounds.length; i++) actual += rounds[i].courts.length * 4;
+
+      var score = (expectedSpots - actual) * 100000000;
+
+      var hasReg = false, regMin = Infinity, regMax = -Infinity;
+      for (i = 0; i < n; i++) {
+        if (!isRegular[i]) continue;
+        hasReg = true;
+        if (played[i] < regMin) regMin = played[i];
+        if (played[i] > regMax) regMax = played[i];
+      }
+      if (hasReg) {
+        var diff = regMax - regMin;
+        if (diff > 1) score += diff * 2000000;
+      }
+
+      grid.fill(0);
+      for (t = 0; t < rounds.length; t++) {
+        var cs = rounds[t].courts;
+        for (c = 0; c < cs.length; c++) {
+          for (j = 0; j < 4; j++) grid[cs[c][j] * 6 + t] = 1;
+        }
+      }
+
+      var badPattern = 0, doubleWait = 0, middleDoubleWait = 0, overStreak = 0;
+      var pongDang = 0, guestError = 0, earlyLateError = 0, avoidPattern = 0;
+      var underTarget = 0, guestPatternError = 0;
+
+      for (i = 0; i < n; i++) {
+        var base = i * 6;
+        var p0 = grid[base], p1 = grid[base + 1], p2 = grid[base + 2];
+        var p3 = grid[base + 3], p4 = grid[base + 4], p5 = grid[base + 5];
+        var patternStr = '' + p0 + p1 + p2 + p3 + p4 + p5;
+
+        var curWait = 0, curPlay = 0, playCount = 0;
+        var blocks = [], firstPlay = -1, lastPlay = -1;
+        for (t = 0; t < 6; t++) {
+          if (grid[base + t]) {
+            playCount++; curWait = 0; curPlay++;
+            if (firstPlay === -1) firstPlay = t;
+            lastPlay = t;
+          } else {
+            if (curPlay > 0) { blocks.push(curPlay); curPlay = 0; }
+            curWait++;
+            if (curWait >= 2) doubleWait++;
+          }
+        }
+        if (curPlay > 0) blocks.push(curPlay);
+
+        if (isRegular[i] && playCount < minGuarantee) underTarget++;
+
+        if (playCount === 4) {
+          var hasMid = (!p1 && !p2) || (!p2 && !p3) || (!p3 && !p4);
+          if (patternStr === '101101' || patternStr === '101011' || patternStr === '110101' || hasMid) {
+            avoidPattern++;
+          }
+          for (j = 0; j < blocks.length; j++) {
+            if (blocks[j] >= 3) overStreak++;
+            if (blocks[j] === 1) badPattern++;
+          }
+        } else if (playCount === 5) {
+          for (j = 0; j < blocks.length; j++) {
+            if (blocks[j] >= 4) overStreak++;
+            if (blocks[j] === 1) badPattern++;
+          }
+        } else if (playCount === 3) {
+          for (j = 0; j < blocks.length; j++) if (blocks[j] === 1) badPattern++;
+        }
+
+        if (guest[i] && playCount !== guestTarget[i]) {
+          guestError += Math.abs(playCount - guestTarget[i]);
+        }
+        if (guest[i] && guestPatterns[i].length > 0 && guestPatterns[i].indexOf(patternStr) === -1) {
+          guestPatternError++;
+        }
+        if (!guest[i] && elTarget[i] && playCount < elTarget[i]) {
+          earlyLateError += (elTarget[i] - playCount);
+        }
+
+        if (firstPlay !== -1 && lastPlay !== -1) {
+          var ws = 0;
+          for (t = firstPlay + 1; t < lastPlay; t++) {
+            if (!grid[base + t]) { ws++; if (ws >= 2) middleDoubleWait++; }
+            else ws = 0;
+          }
+        }
+        for (t = 0; t < 4; t++) {
+          if (!grid[base + t] && grid[base + t + 1] && !grid[base + t + 2]) pongDang++;
+        }
+      }
+
+      var dup = 0;
+      for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++) {
+          if (i === j) continue;
+          var pv = pc[i * n + j];
+          var ov = oc[i * n + j];
+          if (pv >= 2) dup += (pv - 1) * 500000;
+          if (ov >= 2) dup += (ov - 1) * 200000;
+          if (ov >= 3) dup += 1000000;
+        }
+      }
+
+      score += underTarget * 1000000000;
+      score += guestPatternError * 1000000000;
+      score += middleDoubleWait * 500000000;
+      score += guestError * 10000000;
+      score += earlyLateError * 8000000;
+      score += avoidPattern * 1000000;
+      score += dup;
+      score += pongDang * 100000;
+      score += overStreak * 10000;
+      score += badPattern * 10;
+      score += doubleWait * 1;
+
+      return score;
+    }
+
+    function doAttempt() {
+      pc.fill(0); oc.fill(0); played.fill(0); streak.fill(0);
+      var explore = rng() < 0.20;
+      var rounds = [];
+      var i, t, c, r;
+
+      for (t = 0; t < 6; t++) {
+        var courts = courtsAt(mode, t);
+        var avail = [];
+        for (i = 0; i < n; i++) {
+          if (late[i] <= t && t < 6 - early[i]) {
+            if (guest[i] && played[i] >= guestTarget[i]) continue;
+            avail.push(i);
+          }
+        }
+        while (avail.length < courts * 4 && courts > 0) courts--;
+        var req = courts * 4;
+
+        if (req === 0) {
+          for (i = 0; i < n; i++) streak[i] = 0;
+          rounds.push({ courts: [], wait: allIdx.slice() });
+          continue;
+        }
+
+        shuffleInto(avail);
+        avail.sort(makeCmp(t, explore));
+        var chosen = avail.slice(0, req);
+
+        var bestPart = null, bestPartScore = Infinity;
+        var tmp = chosen.slice();
+        for (r = 0; r < 150; r++) {
+          shuffleInto(tmp);
+          var s = 0;
+          for (c = 0; c < courts; c++) {
+            var a = tmp[c * 4], b = tmp[c * 4 + 1], d = tmp[c * 4 + 2], e = tmp[c * 4 + 3];
+            s += pc[a * n + b] * 1000 + pc[d * n + e] * 1000;
+            s += (oc[a * n + d] + oc[a * n + e] + oc[b * n + d] + oc[b * n + e]) * 300;
+          }
+          if (s < bestPartScore) {
+            bestPartScore = s;
+            bestPart = tmp.slice();
+            if (s === 0) break;
+          }
+        }
+
+        inRound.fill(0);
+        var courtList = [];
+        for (c = 0; c < courts; c++) {
+          var q = [bestPart[c * 4], bestPart[c * 4 + 1], bestPart[c * 4 + 2], bestPart[c * 4 + 3]];
+          pc[q[0] * n + q[1]]++; pc[q[1] * n + q[0]]++;
+          pc[q[2] * n + q[3]]++; pc[q[3] * n + q[2]]++;
+          for (var x = 0; x < 2; x++) {
+            for (var y = 2; y < 4; y++) {
+              oc[q[x] * n + q[y]]++; oc[q[y] * n + q[x]]++;
+            }
+          }
+          courtList.push(q);
+          for (i = 0; i < 4; i++) { inRound[q[i]] = 1; played[q[i]]++; streak[q[i]]++; }
+        }
+
+        var wait = [];
+        for (i = 0; i < n; i++) {
+          if (!inRound[i]) { wait.push(i); streak[i] = 0; }
+        }
+        rounds.push({ courts: courtList, wait: wait });
+      }
+
+      var score = scoreOf(rounds);
+      state.attempts++;
+      if (score < state.minScore) {
+        state.minScore = score;
+        state.best = { rounds: cloneRounds(rounds), score: score, attempt: state.attempts };
+      }
+      if (score === 0 || state.attempts >= MAX_RETRY) state.done = true;
+    }
+
+    state.doAttempt = doAttempt;
+    state.finish = function () {
+      if (!state.best) return null;
+      optimizePositions(state.best.rounds, n, rng);
+      return state.best;
+    };
+    return state;
+  }
+
+  function cloneRounds(rounds) {
+    return rounds.map(function (r) {
+      return { courts: r.courts.map(function (c) { return c.slice(); }), wait: r.wait.slice() };
+    });
+  }
+
+  /** 전위/후위 균형 (팀 내 두 명의 순서만 교환) */
+  function optimizePositions(rounds, n, rng) {
+    var f = new Int16Array(n), b = new Int16Array(n);
+    var i, r, c;
+    for (r = 0; r < rounds.length; r++) {
+      for (c = 0; c < rounds[r].courts.length; c++) {
+        var q = rounds[r].courts[c];
+        f[q[0]]++; b[q[1]]++; f[q[2]]++; b[q[3]]++;
+      }
+    }
+    var improved = true, loops = 0;
+    while (improved && loops++ < 200) {
+      improved = false;
+      for (r = 0; r < rounds.length; r++) {
+        for (c = 0; c < rounds[r].courts.length; c++) {
+          var court = rounds[r].courts[c];
+          for (var off = 0; off <= 2; off += 2) {
+            var pF = court[off], pB = court[off + 1];
+            var cur = Math.abs(f[pF] - b[pF]) + Math.abs(f[pB] - b[pB]);
+            var nw = Math.abs((f[pF] - 1) - (b[pF] + 1)) + Math.abs((f[pB] + 1) - (b[pB] - 1));
+            if (nw < cur || (nw === cur && cur > 0 && rng() < 0.2)) {
+              court[off] = pB; court[off + 1] = pF;
+              f[pF]--; b[pF]++; f[pB]++; b[pB]--;
+              improved = true;
+            }
+          }
+        }
+      }
+    }
+    return { front: f, back: b };
+  }
+
+  /** 렌더링용 집계 */
+  function summarize(rounds, players) {
+    var n = players.length;
+    var stat = [], i, j;
+    for (i = 0; i < n; i++) stat.push({ play: 0, front: 0, back: 0, wait: 0, pattern: '' });
+    var partner = [], opponent = [];
+    for (i = 0; i < n; i++) {
+      partner.push(new Array(n).fill(0));
+      opponent.push(new Array(n).fill(0));
+    }
+    var grid = [];
+    for (i = 0; i < n; i++) grid.push(new Array(6).fill(false));
+
+    rounds.forEach(function (r, t) {
+      r.courts.forEach(function (q) {
+        stat[q[0]].front++; stat[q[1]].back++; stat[q[2]].front++; stat[q[3]].back++;
+        for (var k = 0; k < 4; k++) { stat[q[k]].play++; grid[q[k]][t] = true; }
+        partner[q[0]][q[1]]++; partner[q[1]][q[0]]++;
+        partner[q[2]][q[3]]++; partner[q[3]][q[2]]++;
+        for (var x = 0; x < 2; x++) {
+          for (var y = 2; y < 4; y++) {
+            opponent[q[x]][q[y]]++; opponent[q[y]][q[x]]++;
+          }
+        }
+      });
+      r.wait.forEach(function (i) { stat[i].wait++; });
+    });
+
+    for (i = 0; i < n; i++) {
+      stat[i].pattern = grid[i].map(function (v) { return v ? '1' : '0'; }).join('');
+      stat[i].grid = grid[i];
+    }
+    return { stat: stat, partner: partner, opponent: opponent };
+  }
+
+  /** 라운드 t에 그 선수가 코트에 나올 수 있는 상태인지 (대기 명단 표기용) */
+  function availableAt(p, t) {
+    return (p.late | 0) <= t && t < 6 - (p.early | 0);
+  }
+
+  global.TennisEngine = {
+    TIMES: TIMES,
+    MAX_RETRY: MAX_RETRY,
+    PLAYER_COLORS: PLAYER_COLORS,
+    MODES: MODES,
+    courtsAt: courtsAt,
+    spotsFor: spotsFor,
+    planFor: planFor,
+    modeInfo: modeInfo,
+    colorMap: colorMap,
+    makeRun: makeRun,
+    summarize: summarize,
+    availableAt: availableAt
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = global.TennisEngine;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+
+<script>
+(function () {
+  'use strict';
+  var E = window.TennisEngine;
+
+  var FIXED = ['현규','성배','화래','상오','정석','승현','철웅','희수','용관','상은','상우','상훈','지원'];
+
+  var roster = FIXED.map(function (n) {
+    return { name: n, late: 0, early: 0, attending: true, guest: false, fixed: true };
+  });
+
+  var mode = null;
+  var userPicked = false;
+  var run = null;
+  var cancelled = false;
+  var result = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  };
+
+  function attending() { return roster.filter(function (p) { return p.attending; }); }
+
+  function colors() {
+    return E.colorMap(attending().map(function (p) { return p.name; }));
+  }
+
+  /* ---------- 명단 ---------- */
+  function refreshCount() {
+    var n = attending().length;
+    var g = attending().filter(function (p) { return p.guest; }).length;
+    var lateN = attending().filter(function (p) { return p.late || p.early; }).length;
+    $('countLine').innerHTML = '참석 <b>' + n + '명</b>' +
+      (g ? '  ·  게스트 ' + g + '명' : '') +
+      (lateN ? '  ·  지각·조퇴 ' + lateN + '명' : '');
+  }
+
+  function renderRoster() {
+    var cm = colors();
+    var html = '<div class="r-head"><span>이름</span><span>지각</span><span>조퇴</span>' +
+               '<span>참석</span><span>게스트</span><span></span></div>';
+    roster.forEach(function (p, i) {
+      html += '<div class="r-row' + (p.attending ? '' : ' off') + '">' +
+        '<div class="r-name"><span class="chip" style="background:' +
+          (p.attending ? cm[p.name] : 'var(--ink-3)') + '"></span><b>' + esc(p.name) + '</b></div>' +
+        '<input type="number" min="0" max="5" value="' + p.late + '" data-i="' + i + '" data-f="late">' +
+        '<input type="number" min="0" max="5" value="' + p.early + '" data-i="' + i + '" data-f="early">' +
+        '<div class="cbox"><input type="checkbox" data-i="' + i + '" data-f="attending"' +
+          (p.attending ? ' checked' : '') + ' aria-label="' + esc(p.name) + ' 참석"></div>' +
+        '<div class="cbox"><input type="checkbox" data-i="' + i + '" data-f="guest"' +
+          (p.guest ? ' checked' : '') + ' aria-label="' + esc(p.name) + ' 게스트"></div>' +
+        (p.fixed
+          ? '<button class="del spacer" tabindex="-1" aria-hidden="true">×</button>'
+          : '<button class="del" data-del="' + i + '" title="명단에서 빼기">×</button>') +
+      '</div>';
+    });
+    $('roster').innerHTML = html;
+    refreshCount();
+  }
+
+  /* 사파리는 체크박스에서 input 이벤트를 흘리는 경우가 있어 change 까지 함께 받는다 */
+  function onRosterChange(e) {
+    var t = e.target;
+    if (!t || !t.getAttribute) return;
+    var i = t.getAttribute('data-i'), f = t.getAttribute('data-f');
+    if (i === null || !f) return;
+    var p = roster[+i];
+    if (!p) return;
+
+    if (t.type === 'checkbox') {
+      if (p[f] === t.checked) return;
+      p[f] = t.checked;
+      renderRoster();              // 색상 배정이 바뀌므로 전체 재구성
+    } else {
+      var v = Math.max(0, Math.min(5, parseInt(t.value, 10) || 0));
+      p[f] = v;
+      if (p.late + p.early > 5) { p[f] = 0; v = 0; }
+      if (String(v) !== t.value) t.value = v;
+      refreshCount();              // 입력 중 포커스를 잃지 않도록 표는 그대로 둔다
+    }
+    renderModes();
+  }
+  $('roster').addEventListener('input', onRosterChange);
+  $('roster').addEventListener('change', onRosterChange);
+
+  $('roster').addEventListener('click', function (e) {
+    var el = e.target, d = null;
+    while (el && el !== $('roster')) {
+      if (el.getAttribute && el.getAttribute('data-del') !== null) { d = el.getAttribute('data-del'); break; }
+      el = el.parentNode;
+    }
+    if (d === null) return;
+    roster.splice(+d, 1);
+    renderRoster(); renderModes();
+  });
+
+  function addGuest() {
+    var v = $('newName').value.trim();
+    if (!v) return;
+    if (roster.some(function (p) { return p.name === v; })) {
+      $('newName').select();
+      flash('이미 명단에 있는 이름입니다.');
+      return;
+    }
+    roster.push({ name: v, late: 0, early: 0, attending: true, guest: true, fixed: false });
+    $('newName').value = '';
+    renderRoster(); renderModes();
+  }
+  $('addBtn').addEventListener('click', addGuest);
+  $('newName').addEventListener('keydown', function (e) { if (e.key === 'Enter') addGuest(); });
+
+  /* ---------- 모드 ---------- */
+  /* 권장 기준: ① 전원 4경기 가능 ② 경기수가 가장 고르게 ③ 코트를 덜 늘리는 쪽 */
+  function recommend(n) {
+    var best = null;
+    E.MODES.forEach(function (m) {
+      var pl = E.planFor(m.id, n);
+      if (!pl.inRange) return;
+      if (!best) { best = pl; return; }
+      if (pl.full4 !== best.full4) { if (pl.full4) best = pl; return; }
+      if (best.full4) {
+        if (pl.rem < best.rem) best = pl;          // 4경기 보장된 것들 중 가장 균등한 쪽
+      } else {
+        if (pl.base > best.base) best = pl;        // 보장이 안 되면 그나마 경기수 많은 쪽
+        else if (pl.base === best.base && pl.rem < best.rem) best = pl;
+      }
+    });
+    return best ? best.mode : null;
+  }
+
+  function renderModes() {
+    var n = attending().length;
+    var rec = recommend(n);
+    if (!userPicked || !isUsable(mode, n)) mode = rec;
+
+    $('modes').innerHTML = E.MODES.map(function (m) {
+      var pl = E.planFor(m.id, n);
+      var badge = '', dist, cls = 'mode';
+      if (!pl.inRange) {
+        dist = n < pl.min ? pl.min + '명부터 가능' : pl.max + '명까지 가능';
+        badge = '<span class="badge warn">인원 범위 밖</span>';
+      } else {
+        var hi = pl.rem, lo = n - pl.rem;
+        dist = hi === 0
+          ? '전원 ' + pl.base + '경기'
+          : hi + '명 ' + (pl.base + 1) + '경기 · ' + lo + '명 ' + pl.base + '경기';
+        if (m.id === rec) badge = '<span class="badge rec">권장</span>';
+        else if (!pl.full4) badge = '<span class="badge warn">4경기 미달</span>';
+      }
+      if (m.id === mode) cls += ' on';
+      return '<button class="' + cls + '" data-mode="' + m.id + '"' + (pl.inRange ? '' : ' disabled') + '>' +
+        '<div class="m-top"><span class="m-name">' + m.label + '</span>' + badge + '</div>' +
+        '<div class="m-dist">' + dist + '</div>' +
+        '<div class="m-slots">총 ' + pl.spots + '자리</div>' +
+      '</button>';
+    }).join('');
+
+    var ok = !!mode;
+    $('runBtn').disabled = !ok;
+    if (!ok) {
+      $('notice').innerHTML = '<div class="notice">참석 인원이 ' + n +
+        '명입니다. 8명 이상 16명 이하여야 대진표를 만들 수 있습니다.</div>';
+    } else {
+      var pl = E.planFor(mode, n);
+      $('notice').innerHTML = pl.full4 ? '' :
+        '<div class="notice">' + n + '명이 ' + E.modeInfo(mode).label +
+        '로 뛰면 총 ' + pl.spots + '자리라 전원 4경기가 불가능합니다. 목표를 ' + pl.base +
+        '경기로 낮춰서 배정하며, ' + (n - pl.rem) + '명이 ' + pl.base + '경기가 됩니다.</div>';
+    }
+  }
+
+  function isUsable(id, n) {
+    if (!id) return false;
+    return E.planFor(id, n).inRange;
+  }
+
+  $('modes').addEventListener('click', function (e) {
+    var el = e.target, id = null;
+    while (el && el !== $('modes')) {
+      if (el.getAttribute && el.getAttribute('data-mode')) {
+        if (el.disabled) return;
+        id = el.getAttribute('data-mode');
+        break;
+      }
+      el = el.parentNode;
+    }
+    if (!id) return;
+    mode = id; userPicked = true;
+    renderModes();
+  });
+
+  function flash(msg) {
+    $('notice').innerHTML = '<div class="notice">' + esc(msg) + '</div>';
+  }
+
+  /* ---------- 생성 ---------- */
+  function start() {
+    var players = attending().map(function (p) {
+      return { name: p.name, late: p.late, early: p.early, guest: p.guest };
+    });
+    var seedRaw = $('seed').value.trim();
+    var seed = seedRaw === '' ? (Math.random() * 1000000000) | 0 : (parseInt(seedRaw, 10) | 0);
+
+    run = E.makeRun(players, mode, seed);
+    run.usedSeed = seed;
+    cancelled = false;
+    $('runBtn').disabled = true;
+    $('cancelBtn').classList.remove('hidden');
+    $('output').innerHTML = '';
+    result = null;
+    tick();
+  }
+
+  function tick() {
+    var t0 = performance.now();
+    while (!run.done && !cancelled && performance.now() - t0 < 40) run.doAttempt();
+
+    var pct = Math.min(100, Math.round(run.attempts / E.MAX_RETRY * 100));
+    $('fill').style.width = pct + '%';
+    $('pLabel').textContent = '탐색 ' + run.attempts.toLocaleString() + '회 · ' + pct + '%';
+
+    if (cancelled || run.done) return finish();
+    setTimeout(tick, 0);
+  }
+
+  function finish() {
+    $('runBtn').disabled = false;
+    $('cancelBtn').classList.add('hidden');
+    var best = run.finish();
+    if (!best) { $('pLabel').textContent = '중지'; return; }
+    $('fill').style.width = '100%';
+    $('pLabel').textContent = '완료 · ' + run.attempts.toLocaleString() + '회 탐색' +
+      (cancelled ? ' (중지)' : '') + ' · 시드 ' + run.usedSeed;
+    result = { best: best, players: run.players, mode: run.mode, guarantee: run.minGuarantee };
+    render();
+  }
+
+  $('runBtn').addEventListener('click', start);
+  $('cancelBtn').addEventListener('click', function () { cancelled = true; });
+
+  /* ---------- 결과 렌더 ---------- */
+  function stripHTML(grid, color) {
+    return '<span class="strip" style="color:' + color + '">' +
+      grid.map(function (v) { return '<i class="' + (v ? 'on' : 'off') + '"></i>'; }).join('') +
+      '</span>';
+  }
+
+  var AVOID = ['101101', '101011', '110101'];
+  function isAvoid(stat) {
+    if (stat.play !== 4) return false;
+    var g = stat.grid;
+    var mid = (!g[1] && !g[2]) || (!g[2] && !g[3]) || (!g[3] && !g[4]);
+    return AVOID.indexOf(stat.pattern) !== -1 || mid;
+  }
+
+  function render() {
+    var players = result.players, best = result.best, m = result.mode;
+    var n = players.length;
+    var cm = E.colorMap(players.map(function (p) { return p.name; }));
+    var S = E.summarize(best.rounds, players);
+    var is3 = m !== '2court';
+    var nm = function (i) {
+      return '<span class="pname" style="color:' + cm[players[i].name] + '">' +
+             esc(players[i].name) + '</span>';
+    };
+
+    /* --- 품질 요약 --- */
+    var dupP = 0, dupO = 0;
+    for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) {
+      if (S.partner[i][j] >= 2) dupP++;
+      if (S.opponent[i][j] >= 3) dupO++;
+    }
+    var avoidN = 0, under = [];
+    players.forEach(function (p, i) {
+      if (isAvoid(S.stat[i])) avoidN++;
+      if (!p.guest && !p.late && !p.early && S.stat[i].play < result.guarantee) under.push(p.name);
+    });
+    var q = [];
+    q.push('<span class="q">' + E.modeInfo(m).label + '</span>');
+    q.push('<span class="q' + (under.length ? ' bad' : '') + '">목표 ' + result.guarantee +
+           '경기 미달 <b>' + under.length + '명</b>' + (under.length ? ' (' + under.join(', ') + ')' : '') + '</span>');
+    q.push('<span class="q' + (dupP ? ' bad' : '') + '">같은 파트너 2회 <b>' + dupP + '쌍</b></span>');
+    q.push('<span class="q' + (dupO ? ' bad' : '') + '">같은 상대 3회 <b>' + dupO + '쌍</b></span>');
+    q.push('<span class="q' + (avoidN ? ' bad' : '') + '">기피 흐름 <b>' + avoidN + '명</b></span>');
+
+    /* --- 대진표 --- */
+    var courtCols = is3 ? 3 : 2;
+    var head1 = '<tr><th rowspan="2">시간</th>';
+    var head2 = '<tr>';
+    for (var c = 0; c < courtCols; c++) {
+      head1 += '<th colspan="4" class="court-h">코트 ' + (c + 1) + '</th><th rowspan="2">결과</th>';
+      head2 += '<th colspan="2" class="teamA-h">팀A</th><th colspan="2" class="teamB-h">팀B</th>';
+    }
+    head1 += '<th rowspan="2">대기</th></tr>';
+    head2 += '</tr>';
+
+    var body = '';
+    best.rounds.forEach(function (r, t) {
+      body += '<tr><td class="t-time">' + E.TIMES[t] + '</td>';
+      for (var c = 0; c < courtCols; c++) {
+        if (r.courts[c]) {
+          body += r.courts[c].map(function (p) { return '<td>' + nm(p) + '</td>'; }).join('');
+          body += '<td class="result-cell"></td>';
+        } else {
+          var reason = E.courtsAt(m, t) > c ? '인원 부족' : '미운영';
+          body += '<td colspan="4" class="dead">— ' + reason + ' —</td><td class="dead">—</td>';
+        }
+      }
+      var w = r.wait.map(function (i) {
+        var p = players[i];
+        var out = !E.availableAt(p, t);
+        return '<span class="' + (out ? 'gone' : '') + '" style="color:' + cm[p.name] +
+               ';font-weight:600"' + (out ? ' title="지각·조퇴로 코트에 없는 시간"' : '') +
+               '>' + esc(p.name) + '</span>';
+      }).join(', ');
+      body += '<td class="wait-cell">' + (w || '—') + '</td></tr>';
+    });
+
+    /* --- 참여 통계 --- */
+    var statHead = '<tr><th>회원</th><th>경기</th><th>전위</th><th>후위</th><th>대기</th>' +
+                   '<th style="min-width:150px">출전 흐름 (20시→23시)</th></tr>';
+    var stats = '';
+    players.forEach(function (p, i) {
+      var s = S.stat[i];
+      var tag = p.guest ? ' <span class="flag">G</span>' :
+        ((p.late ? ' <span class="flag">지' + p.late + '</span>' : '') +
+         (p.early ? ' <span class="flag">조' + p.early + '</span>' : ''));
+      stats += '<tr><td style="text-align:left;padding-left:8px">' + nm(i) + tag + '</td>' +
+        '<td class="pat-code" style="font-size:13px;color:var(--ink)">' + s.play + '</td>' +
+        '<td>' + s.front + '</td><td>' + s.back + '</td><td>' + s.wait + '</td>' +
+        '<td style="text-align:left;padding-left:8px">' + stripHTML(s.grid, cm[p.name]) +
+        '<span class="pat-code">' + s.pattern + (isAvoid(s) ? ' ⚑' : '') + '</span></td></tr>';
+    });
+
+    /* --- 행렬 --- */
+    function matrix(data, kind) {
+      var h = '<tr><th class="rh">이름</th>' + players.map(function (p) {
+        return '<th style="color:' + cm[p.name] + '">' + esc(p.name) + '</th>';
+      }).join('') + '</tr>';
+      var b = players.map(function (p, i) {
+        return '<tr><th class="rh" style="color:' + cm[p.name] + '">' + esc(p.name) + '</th>' +
+          players.map(function (q, j) {
+            if (i === j) return '<td class="self">·</td>';
+            var v = data[i][j];
+            var cls = v === 0 ? 'zero' : (v >= 2 ? (kind === 'p' ? 'hi-p' : 'hi-o') : '');
+            return '<td class="' + cls + '">' + v + '</td>';
+          }).join('') + '</tr>';
+      }).join('');
+      return '<div class="scroll"><table class="mtx"><thead>' + h + '</thead><tbody>' + b + '</tbody></table></div>';
+    }
+
+    $('output').innerHTML =
+      '<section><div class="sec-head"><h2>대진표</h2>' +
+        '<span class="sec-note">결과 칸은 비워 뒀습니다</span>' +
+        '<button class="no-print" id="printBtn" style="margin-left:auto">인쇄 · PDF 저장</button></div>' +
+        '<div class="quality">' + q.join('') + '</div>' +
+        '<div class="scroll"><table class="bracket"><thead>' + head1 + head2 +
+        '</thead><tbody>' + body + '</tbody></table></div></section>' +
+
+      '<section><div class="sec-head"><h2>참여 통계</h2>' +
+        '<span class="sec-note">채운 칸이 출전, 빈 칸이 대기</span></div>' +
+        '<div class="scroll"><table><thead>' + statHead + '</thead><tbody>' +
+        stats + '</tbody></table></div></section>' +
+
+      '<section><div class="sec-head"><h2>파트너 매칭</h2>' +
+        '<span class="sec-note">같은 팀으로 만난 횟수 · 2회 이상 표시</span></div>' +
+        matrix(S.partner, 'p') + '</section>' +
+
+      '<section><div class="sec-head"><h2>상대 매칭</h2>' +
+        '<span class="sec-note">네트 반대편에서 만난 횟수 · 2회 이상 표시</span></div>' +
+        matrix(S.opponent, 'o') + '</section>';
+
+    $('printBtn').addEventListener('click', function () { window.print(); });
+  }
+
+  try {
+    if (!E) throw new Error('TennisEngine 미로딩');
+    renderRoster();
+    renderModes();
+    var boot = $('boot');
+    if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+  } catch (err) {
+    if (window.__bootFail) window.__bootFail((err && err.message) || err);
+  }
+})();
+</script>
+</body>
+</html>
