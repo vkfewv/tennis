@@ -261,6 +261,29 @@
     background: var(--court); color: var(--court-ink); padding: 2px 6px; border-radius: 2px;
   }
 
+  /* ---------- 이미지 저장 ---------- */
+  .img-panel {
+    margin-bottom: 12px; padding: 12px; border-radius: 3px;
+    background: var(--paper); border: 1px solid var(--line);
+  }
+  .img-panel img {
+    display: block; max-width: 100%; height: auto;
+    border: 1px solid var(--line-soft); border-radius: 2px;
+  }
+  .img-actions {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+  }
+  .img-actions .tip { font-size: 12.5px; color: var(--ink-2); margin-right: auto; }
+  a.dl {
+    font-size: 13px; font-weight: 600; text-decoration: none;
+    padding: 7px 13px; border-radius: 2px;
+    background: var(--court); border: 1px solid var(--court); color: var(--court-ink);
+  }
+  /* 이미지로 굽는 동안 쓰는 임시 사본: 상호작용 흔적 제거 */
+  .shot .result-cell { background: #fff; }
+  .shot td.sel, .shot .wchip.sel { box-shadow: none; background: transparent; }
+  .shot td.slot { cursor: default; }
+
   #boot {
     margin-bottom: 20px; padding: 12px 14px; border-radius: 3px;
     background: var(--warn-bg); border-left: 3px solid var(--warn);
@@ -1162,8 +1185,10 @@ window.addEventListener('error', function (e) {
           '<span class="edit-hint" id="editHint"></span>' +
           '<button id="undoBtn" disabled>되돌리기</button>' +
           '<button id="resetBtn" disabled>생성 결과로</button>' +
+          '<button id="imgBtn">대진표 이미지</button>' +
           '<button id="printBtn">인쇄 · PDF 저장</button>' +
         '</div>' +
+        '<div id="imgPanel" class="no-print"></div>' +
         '<div id="quality" class="quality"></div>' +
         '<div class="scroll" id="bracketWrap"></div></section>' +
 
@@ -1180,6 +1205,7 @@ window.addEventListener('error', function (e) {
         '<div id="opponentWrap"></div></section>';
 
     $('printBtn').addEventListener('click', function () { window.print(); });
+    $('imgBtn').addEventListener('click', makeImage);
     $('undoBtn').addEventListener('click', function () {
       if (!view.undo.length) return;
       view.rounds = view.undo.pop();
@@ -1197,6 +1223,128 @@ window.addEventListener('error', function (e) {
     $('bracketWrap').addEventListener('click', onSlotClick);
 
     refresh();
+  }
+
+  /* ---------- 대진표 이미지 ---------- */
+  var H2C = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  var h2cLoading = false;
+
+  function loadH2C(cb) {
+    if (window.html2canvas) return cb(null);
+    if (h2cLoading) return cb(new Error('이미 준비 중입니다. 잠시 후 다시 눌러주세요'));
+    h2cLoading = true;
+    var done = false;
+    var finish = function (err) {
+      if (done) return;
+      done = true;
+      h2cLoading = false;
+      cb(err);
+    };
+    var timer = setTimeout(function () {
+      finish(new Error('이미지 변환 도구를 받는 데 시간이 너무 걸립니다'));
+    }, 8000);
+    var s = document.createElement('script');
+    s.src = H2C;
+    s.onload = function () {
+      clearTimeout(timer);
+      finish(window.html2canvas ? null : new Error('이미지 변환 도구를 불러오지 못했습니다'));
+    };
+    s.onerror = function () {
+      clearTimeout(timer);
+      finish(new Error('네트워크에서 이미지 변환 도구를 받지 못했습니다'));
+    };
+    document.head.appendChild(s);
+  }
+
+  function stamp() {
+    var d = new Date();
+    return (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+  }
+  function fileStamp() {
+    var d = new Date();
+    var p = function (v) { return v < 10 ? '0' + v : '' + v; };
+    return '' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+  }
+
+  function imgBusy(on, label) {
+    var b = $('imgBtn');
+    if (!b) return;
+    b.disabled = on;
+    b.textContent = label || '대진표 이미지';
+  }
+
+  function imgFail(msg) {
+    imgBusy(false);
+    $('imgPanel').innerHTML = '<div class="notice" style="margin-top:0">' + esc(msg) +
+      '. 대신 <b>인쇄 · PDF 저장</b>을 쓰거나 화면을 캡처해 주세요.</div>';
+  }
+
+  function makeImage() {
+    imgBusy(true, '이미지 만드는 중…');
+    loadH2C(function (err) {
+      if (err) return imgFail(err.message);
+
+      var box = document.createElement('div');
+      box.className = 'shot';
+      box.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1;' +
+        'background:#FCFBF8;padding:18px;display:inline-block;';
+
+      var title = stamp() + ' 테니스 대진표 · ' + E.modeInfo(view.mode).label +
+                  (view.edited ? ' (수정)' : '');
+      var head = document.createElement('div');
+      head.style.cssText = 'font-family:' +
+        getComputedStyle(document.body).fontFamily +
+        ';font-size:17px;font-weight:700;color:#17211F;margin-bottom:10px;letter-spacing:-0.02em';
+      head.textContent = title;
+      box.appendChild(head);
+
+      var clone = $('bracketWrap').querySelector('table').cloneNode(true);
+      var sels = clone.querySelectorAll('.sel');
+      for (var i = 0; i < sels.length; i++) {
+        sels[i].className = sels[i].className.replace(/\s*\bsel\b/g, '');
+      }
+      box.appendChild(clone);
+      document.body.appendChild(box);
+
+      var cleanup = function () {
+        if (box.parentNode) box.parentNode.removeChild(box);
+      };
+
+      window.html2canvas(box, {
+        scale: 2,
+        backgroundColor: '#FCFBF8',
+        logging: false,
+        useCORS: false
+      }).then(function (canvas) {
+        cleanup();
+        var name = '대진표_' + fileStamp() + '.png';
+        if (canvas.toBlob) {
+          canvas.toBlob(function (blob) {
+            if (!blob) return imgFail('이미지를 만들지 못했습니다');
+            showImage(URL.createObjectURL(blob), name);
+          }, 'image/png');
+        } else {
+          showImage(canvas.toDataURL('image/png'), name);
+        }
+      }).catch(function (e) {
+        cleanup();
+        imgFail((e && e.message) || '이미지를 만들지 못했습니다');
+      });
+    });
+  }
+
+  function showImage(url, name) {
+    imgBusy(false);
+    $('imgPanel').innerHTML =
+      '<div class="img-panel">' +
+        '<img src="' + url + '" alt="대진표 이미지">' +
+        '<div class="img-actions">' +
+          '<span class="tip">폰에서는 이미지를 <b>길게 눌러 저장</b>하거나 공유하세요</span>' +
+          '<a class="dl" href="' + url + '" download="' + name + '">이미지 저장</a>' +
+          '<button id="imgClose">닫기</button>' +
+        '</div>' +
+      '</div>';
+    $('imgClose').addEventListener('click', function () { $('imgPanel').innerHTML = ''; });
   }
 
   function sameAsOriginal() {
@@ -1251,6 +1399,7 @@ window.addEventListener('error', function (e) {
     renderQuality();
     renderStats();
     renderMatrices();
+    if ($('imgPanel')) $('imgPanel').innerHTML = '';   // 수정 전 이미지가 남지 않도록
 
     $('undoBtn').disabled = view.undo.length === 0;
     $('resetBtn').disabled = !view.edited;
